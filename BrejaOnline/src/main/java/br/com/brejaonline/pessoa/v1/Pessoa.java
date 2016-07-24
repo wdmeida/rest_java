@@ -40,6 +40,7 @@ import br.com.brejaonline.endereco.v1.Endereco;
  * 
  * 
  */
+@SuppressWarnings("restriction")
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "Pessoa", propOrder = {
     "nome",

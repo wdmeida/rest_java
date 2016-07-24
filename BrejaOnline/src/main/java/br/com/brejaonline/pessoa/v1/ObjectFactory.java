@@ -25,6 +25,7 @@ import javax.xml.bind.annotation.XmlRegistry;
  * provided in this class.
  * 
  */
+@SuppressWarnings("restriction")
 @XmlRegistry
 public class ObjectFactory {
 
