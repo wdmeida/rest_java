@@ -2,9 +2,11 @@ package br.com.brejaonline.model;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Estoque {
-	private Collection<Cerveja> cervejas = new ArrayList<Cerveja>();
+	private Map<String, Cerveja> cervejas = new HashMap<String, Cerveja>();
 	
 	
 	/*
@@ -19,15 +21,19 @@ public class Estoque {
 				"Cerveja de trigo alemã",
 				"Erdinger Weissbräu",
 				Cerveja.Tipo.WEIZEN);
-		this.cervejas.add(primeiraCerveja);
-		this.cervejas.add(segundaCerveja);
+		this.cervejas.put(primeiraCerveja.getNome(), primeiraCerveja);
+		this.cervejas.put(segundaCerveja.getNome(), segundaCerveja);
 	}
 
 	public Collection<Cerveja> listarCervejas() {
-		return new ArrayList<Cerveja>(this.cervejas);
+		return new ArrayList<Cerveja>(this.cervejas.values());
 	}
 	
 	public void adicionarCerveja (Cerveja cerveja) {
-		this.cervejas.add(cerveja);
+		this.cervejas.put(cerveja.getNome(), cerveja);
 	}
-}
+	
+	public Cerveja recuperarCervejaPeloNome (String nome) {
+		return this.cervejas.get(nome);
+	}
+}//class Estoque

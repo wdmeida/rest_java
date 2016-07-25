@@ -1,6 +1,8 @@
 package br.com.brejaonline.servlets;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
@@ -15,6 +17,7 @@ import javax.xml.stream.XMLStreamWriter;
 import org.codehaus.jettison.mapped.MappedNamespaceConvention;
 import org.codehaus.jettison.mapped.MappedXMLStreamWriter;
 
+import br.com.brejaonline.exception.RecursoSemIdentificadorException;
 import br.com.brejaonline.model.Cerveja;
 import br.com.brejaonline.model.Estoque;
 import br.com.brejaonline.model.rest.Cervejas;
@@ -52,13 +55,17 @@ public class CervejaServlet extends HttpServlet {
 	
 	private void escreveXML(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		
-		Cervejas cervejas = new Cervejas();
-		cervejas.setCervejas(new ArrayList<Cerveja>(estoque.listarCervejas()));
+		Object objetoAEscrever = localizaObjetoASerEnvidado(req);
+		
+		if (objetoAEscrever == null) {
+			resp.sendError(404); //Objeto não encontrado
+			return;
+		}
 		
 		try {
 			resp.setContentType("application/xml;charset=UTF-8");
 			Marshaller marchaller = context.createMarshaller();
-			marchaller.marshal(cervejas, resp.getWriter());
+			marchaller.marshal(objetoAEscrever, resp.getWriter());
 			
 		} catch (JAXBException e) {
 			resp.sendError(500); //Erro interno inesperado.
@@ -68,8 +75,12 @@ public class CervejaServlet extends HttpServlet {
 	//	Este código assume o Jettison como provedor de mapeamento JSON.
 	private void escreveJSON(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		
-		Cervejas cervejas = new Cervejas();
-		cervejas.setCervejas(new ArrayList<Cerveja>(estoque.listarCervejas()));
+		Object objetoAEscrever = localizaObjetoASerEnvidado(req);
+		
+		if (objetoAEscrever == null) {
+			resp.sendError(404); //Objeto não encontrado
+			return;
+		}
 		
 		try {
 			resp.setContentType("application/json;charset=UTF-8");
@@ -78,10 +89,50 @@ public class CervejaServlet extends HttpServlet {
 			XMLStreamWriter xmlStreamWriter =  new MappedXMLStreamWriter(con, resp.getWriter());
 			
 			Marshaller marshaller = context.createMarshaller();
-			marshaller.marshal(cervejas, xmlStreamWriter);
+			marshaller.marshal(objetoAEscrever, xmlStreamWriter);
 			
 		} catch (JAXBException e) {
 			resp.sendError(500);
 		}
 	}//escreveJSON()
+	
+	private String obtemIdentificador(HttpServletRequest req) throws RecursoSemIdentificadorException{
+		String requestUri = req.getRequestURI();
+		
+		String[] pedacosDaUri = requestUri.split("/");
+		
+		boolean contextoCervejasEncontrado = false;
+		for (String contexto : pedacosDaUri) {
+			if (contexto.equals("cervejas")) {
+				contextoCervejasEncontrado = true;
+				continue;
+			}
+			
+			if (contextoCervejasEncontrado) {
+				try {
+					//Tenta decodificar usando o charset UTF-8.
+					return URLDecoder.decode(contexto, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					//Caso o charset não seja encontrado.
+					return URLDecoder.decode(contexto);
+				}
+			}
+		}
+		
+		throw new RecursoSemIdentificadorException("Recurso sem identificador");
+	}//obtemIdentificador()
+	
+	private Object localizaObjetoASerEnvidado(HttpServletRequest req) {
+		Object objeto = null;
+		
+		try {
+			String identificador = obtemIdentificador(req);
+			objeto = estoque.recuperarCervejaPeloNome(identificador);
+		} catch (RecursoSemIdentificadorException e) {
+			Cervejas cervejas = new Cervejas();
+			cervejas.setCervejas(new ArrayList<Cerveja>(estoque.listarCervejas()));
+			objeto = cervejas;
+		}
+		return objeto;
+	}//localizaObjetoASerEnviado()
 }//class CervejaServlet
