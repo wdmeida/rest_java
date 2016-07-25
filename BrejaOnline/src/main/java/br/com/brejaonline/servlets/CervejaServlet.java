@@ -1,8 +1,6 @@
 package br.com.brejaonline.servlets;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 
 import javax.servlet.ServletException;
@@ -12,6 +10,10 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.stream.XMLStreamWriter;
+
+import org.codehaus.jettison.mapped.MappedNamespaceConvention;
+import org.codehaus.jettison.mapped.MappedXMLStreamWriter;
 
 import br.com.brejaonline.model.Cerveja;
 import br.com.brejaonline.model.Estoque;
@@ -34,19 +36,8 @@ public class CervejaServlet extends HttpServlet {
 	
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		//	Obtém o cabeçalho para processar o formato requerido pelo usuário.
 		String acceptHeader = req.getHeader("Accept");		
-/*		
-		try {
-			Marshaller marshaller = context.createMarshaller();
-			resp.setContentType("application/xml;charset=UTF-8");
-			PrintWriter out = resp.getWriter();
-			
-			Cervejas cervejas = new Cervejas();
-			cervejas.setCervejas(new ArrayList<Cerveja>(estoque.listarCervejas()));
-			marshaller.marshal(cervejas, out);
-		} catch (Exception e) {
-			resp.sendError(500, e.getMessage());
-		}*/
 		
 		if (acceptHeader == null || acceptHeader.contains("application/xml")) {
 			escreveXML(req, resp);
@@ -74,6 +65,7 @@ public class CervejaServlet extends HttpServlet {
 		}
 	}//escreveXML()
 	
+	//	Este código assume o Jettison como provedor de mapeamento JSON.
 	private void escreveJSON(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		
 		Cervejas cervejas = new Cervejas();
@@ -87,8 +79,9 @@ public class CervejaServlet extends HttpServlet {
 			
 			Marshaller marshaller = context.createMarshaller();
 			marshaller.marshal(cervejas, xmlStreamWriter);
+			
 		} catch (JAXBException e) {
 			resp.sendError(500);
 		}
-	}
+	}//escreveJSON()
 }//class CervejaServlet
