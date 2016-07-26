@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.stream.XMLStreamWriter;
 
 import org.codehaus.jettison.mapped.MappedNamespaceConvention;
@@ -37,6 +38,7 @@ public class CervejaServlet extends HttpServlet {
 		}
 	}
 	
+	// Implementa o método responsável por obter um recurso do web service.
 	@Override
 	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
 		//	Obtém o cabeçalho para processar o formato requerido pelo usuário.
@@ -135,4 +137,36 @@ public class CervejaServlet extends HttpServlet {
 		}
 		return objeto;
 	}//localizaObjetoASerEnviado()
+	
+	//	Método responsável por criar um recurso.
+	@Override
+	protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+		try {
+			String identificador = null;
+			try {
+				identificador = obtemIdentificador(req);
+			} catch (RecursoSemIdentificadorException e) {
+				resp.sendError(400, e.getMessage()); //Manda um erro 400 - Bad Request
+			}
+			
+			if (identificador != null && estoque.recuperarCervejaPeloNome(identificador) != null) {
+				resp.sendError(409, "Já existe uma cerveja com esse nome");
+				return;
+			}
+			
+			Unmarshaller unmarshaller = context.createUnmarshaller();
+			Cerveja cerveja = (Cerveja) unmarshaller.unmarshal(req.getInputStream());
+			cerveja.setNome(identificador);
+			estoque.adicionarCerveja(cerveja);
+			String requestURI = req.getRequestURI();
+			resp.setHeader("Location", requestURI);
+			resp.setStatus(201); //Recurso criado com sucesso.
+			escreveXML(req, resp);
+		} catch (JAXBException e) {
+			// TODO: handle exception
+		}
+	}
+	
+	
 }//class CervejaServlet
